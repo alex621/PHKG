@@ -1,0 +1,1 @@
+curl -x localhost:8080 http://forum4.hkgolden.com/topics.aspx?type=BW

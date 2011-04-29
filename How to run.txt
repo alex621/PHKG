@@ -1,0 +1,21 @@
+Linux
+	要先自行compile node.js (v0.4.6)，下載地點及compile方法可以參考以下網址
+	http://nodejs.org/#download
+
+Windows
+	可下載已compile的node.js，在此處下載
+	http://node-js.prcn.co.cc/bin/0.4.6/node-0.4.6-i686-pc-cygwin-complete.7z
+	
+如何運行？
+	1. 請先把node.js 的executable 位置加至PATH內
+		Linux
+			PATH=$PATH:/some/location/nodejs
+			export PATH
+		
+		Windows
+			參考以下連結
+			http://geekswithblogs.net/renso/archive/2009/10/21/how-to-set-the-windows-path-in-windows-7.aspx
+	
+	2. 打開command line，cd 至phkg 的資料夾中，運行 "node proxy.js"
+	3. 打開瀏覽器，設定HTTP proxy 為 localhost:8080
+	4. 上高登即可

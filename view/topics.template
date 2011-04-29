@@ -1,0 +1,67 @@
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=Big5" />
+		<title>PHKG - 主題列表</title>
+		<link rel="stylesheet" type="text/css" href="<%= config.thisHTTPPath %>css/style.css" />
+		<script type="text/javascript" src="<%= config.thisHTTPPath %>js/jquery-1.5.2.min.js"></script>
+		<script type="text/javascript" src="<%= config.thisHTTPPath %>js/topicsList.js"></script>
+	</head>
+	<body id="topicsList">
+		<table cellspacing="0" cellpadding="0" id="topicsListTbl">
+			<thead>
+				<tr>
+					<th class="titleCol">題目</th>
+					<th class="authorCol">發起人</th>
+					<th class="replyTimeCol">最後回應時間</th>
+					<th class="replyCol">回覆</th>
+					<th class="ratingCol">評分</th>
+				</tr>
+			</thead>
+			<tbody>
+				<% for (var i = 0, l = topics.length; i < l; i++){ %>
+				<% var topic = topics[i]; %>
+				<tr class="<%= (i % 2 ? "odd" : "even") %>">
+					<td class="titleCol">
+						<a href="http://forum6.hkgolden.com/view.aspx?message=<%=parseInt(topic.id)%>">
+							<%= stripDangerousTags(topic.title) %>
+						</a>
+						<% var totalPages = Math.ceil(parseInt(topic.totalReplies) / 25); %>
+						<% if (totalPages > 1){ %>
+						<span class="last">[<a href="http://forum6.hkgolden.com/view.aspx?message=<%=parseInt(topic.id)%>&page=<%=totalPages%>"><%=totalPages%></a>]</span>
+						<% } %>
+					</td>
+					<td class="authorCol"><%= stripDangerousTags(topic.authorName) %></td>
+					<td class="replyTimeCol"><%= hkgTimeFormat(topic.lastReplyTime) %></td>
+					<td class="replyCol"><%= stripDangerousTags(topic.totalReplies) %></td>
+					<td class="ratingCol"><%= stripDangerousTags(topic.rating) %></td>
+				</tr>
+				<% } %>
+			</tbody>
+		</table>
+		
+		<div class="pagin">
+			<div class="headBar"></div>
+			<div class="body">
+				<% if (parseInt(page) > 1){ %>
+				<a class="prev" href="http://forum6.hkgolden.com/topics.aspx?type=<%=type%>&page=<%=(parseInt(page) - 1)%>">上一頁</a>
+				<% } %>
+				
+				<div class="fastPagin">
+					第
+					<select href="http://forum6.hkgolden.com/topics.aspx?type=<%=type%>&page=">
+						<% for (var i = 1; i < 150; i++){ %>
+						<option<%=(i == parseInt(page) ? ' selected="selected"' : "")%> value="<%=i%>"><%=i%></option>
+						<% } %>
+					</select>
+					頁
+				</div>
+				
+				<% if (parseInt(page) < 150){ %>
+				<a class="next" href="http://forum6.hkgolden.com/topics.aspx?type=<%=type%>&page=<%=(parseInt(page) + 1)%>">下一頁</a>
+				<% } %>
+				
+				<div class="cb"></div>
+			</div>
+		</div>
+	</body>
+</html>

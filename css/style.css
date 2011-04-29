@@ -1,0 +1,125 @@
+.cb{
+	clear: both;
+}
+
+table#topicsListTbl{
+	margin: 0 auto;
+	width: 937px;
+}
+table#topicsListTbl, table#topicsListTbl td, table#topicsListTbl th{
+	border: 1px solid black;
+	border-collapse: collapse;
+}
+table#topicsListTbl thead{
+	background: #369;
+	color: white;
+	font-weight: bold;
+}
+table#topicsListTbl th, table#topicsListTbl td{
+	text-align: center;
+	padding: 2px;
+}
+table#topicsListTbl tr.even td{
+	background: #F8F8F8;
+}
+table#topicsListTbl .titleCol{
+	width: 56%;
+	text-align: left;
+}
+table#topicsListTbl .titleCol span.last{
+	margin-left: 5px;
+}
+table#topicsListTbl .authorCol{
+	width: 14%;
+}
+table#topicsListTbl .replyTimeCol{
+	width: 18%;
+}
+table#topicsListTbl .replyCol{
+	width: 6%;
+}
+table#topicsListTbl .ratingCol{
+	width: 6%;
+}
+
+#topicsList  .pagin{
+	border: 1px solid black;
+	width: 921px;
+	margin: 15px auto;
+}
+#topicsList  .pagin .headBar{
+	height: 9px;
+	background: #369;
+}
+#topicsList  .pagin .body{
+	background: #F7F3F7;
+	height: 56px;
+	position: relative;
+}
+#topicsList  .pagin .body a.prev{
+	position: absolute;
+	top: 50%;
+	margin-top: -8px;
+	left: 15px;
+}
+#topicsList  .pagin .body a.next{
+	position: absolute;
+	top: 50%;
+	margin-top: -8px;
+	right: 15px;
+}
+#topicsList .pagin .fastPagin{
+	display: inline-block;
+	position: absolute;
+	top: 50%;
+	margin-top: -15px;
+	left: 50%;
+	margin-left: -25px;
+}
+#topicsList .pagin .fastPagin select{
+	border: 1px solid black;
+}
+
+
+#postPage .title small{
+	font-size: 14px;
+	color: #999;
+}
+#postPage .post{
+	border: 1px solid black;
+	margin-top: 10px;
+}
+#postPage .post .heading{
+	background: #369;
+	padding: 7px;
+	color: white;
+	font-weight: bold;
+}
+#postPage .post .heading .time{
+	font-size: 14px;
+}
+#postPage .post .content{
+	background: #F3F2F1;
+	padding: 7px;
+}
+#postPage .pagination{
+	border: 1px solid black;
+	margin: 10px 0;
+}
+#postPage .pagination .heading{
+	height: 9px;
+	background: #369;
+}
+#postPage .pagination  .body{
+	padding: 18px 5px;
+	background: #F7F3F7;
+}
+#postPage .pagination  .body .prevLink{
+	float: left;
+}
+#postPage .pagination  .body .nextLink{
+	float: right;
+}
+#postPage .pagination  .body .jumpLink{
+	text-align: center;
+}

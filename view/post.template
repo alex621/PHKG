@@ -1,0 +1,71 @@
+<%
+var renderPagination = function (id, page, totalPage){
+	var ret = "<div class=\"pagination\"><div class=\"heading\"></div>";
+	ret += "<div class=\"body\">";
+	if (page > 1){
+		ret += "<a class=\"prevLink\" href=\"http://forum6.hkgolden.com/view.aspx?message="+id+"&page="+(page - 1)+"\">上一頁</a>";
+	}
+	
+	if (page < totalPage){
+		ret += "<a class=\"nextLink\" href=\"http://forum6.hkgolden.com/view.aspx?message="+id+"&page="+(page + 1)+"\">下一頁</a>";
+	}
+	
+	if (totalPage > 1){
+		ret += "<div class=\"jumpLink\">跳至第" +
+					"<select href=\"http://forum6.hkgolden.com/view.aspx?message="+id+"&page=\">";
+		for (var i = 1; i <= totalPage; i++){
+			ret += "<option value=\"" + i + "\"" +
+						(i == page ? " selected=\"selected\"" : "")
+					+ ">"+i+"</option>";
+		}
+		
+		ret += "</select>頁</div>";
+	}
+	
+	ret += "</div><div class=\"cb\"></div></div>";
+	
+	return ret;
+};
+%>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=Big5" />
+		<title>PHKG: <%= stripDangerousTags(post.title) %></title>
+		<link rel="stylesheet" type="text/css" href="<%= config.thisHTTPPath %>css/style.css" />
+		<script type="text/javascript" src="<%= config.thisHTTPPath %>js/jquery-1.5.2.min.js"></script>
+		<script type="text/javascript" src="<%= config.thisHTTPPath %>js/post.js"></script>
+	</head>
+	<body id="postPage">
+		<%
+		var totalPage = Math.ceil(parseInt(post.replyNum) / 25);
+		var page = parseInt(page);
+		var id = parseInt(id);
+		%>
+		
+		<div class="breadcrumb">
+			<% if (post.category != "BW"){ %>
+			&raquo; <a href="http://forum6.hkgolden.com/topics.aspx?type=<%= post.category %>"><%= post.categoryName %></a>
+			(<a href="http://forum6.hkgolden.com/topics.aspx?type=BW">吹水台</a>)
+			<% }else{ %>
+			&raquo; <a href="http://forum6.hkgolden.com/topics.aspx?type=BW">吹水台</a>
+			<% } %>
+		</div>
+		
+		<h1 class="title"><%= stripDangerousTags(post.title) %> <small> <%= stripDangerousTags(post.replyNum) %> 個回覆</small></h1>
+		
+		<%= renderPagination(id, page, totalPage) %>
+	
+		<% for (var i = 0, l = post.posts.length; i < l; i++){ %>
+		<% var postData = post.posts[i]; %>
+		<div class="post">
+			<div class="heading">
+				<%= stripDangerousTags(postData.authorName) %>
+				<span class="time">張貼於 <%= hkgTimeFormat(postData.postDate) %></span>
+			</div>
+			<div class="content"><%= stripDangerousTags(postData.content) %></div>
+		</div>
+		<% } %>
+	
+		<%= renderPagination(id, page, totalPage) %>
+	</body>
+</html>

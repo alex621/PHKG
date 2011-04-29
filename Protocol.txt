@@ -1,0 +1,65 @@
+A packet should include the following information
+123{
+	id: "",
+	data: "",
+	isResponse: "" //optional
+}
+//123 is the content length
+//followed by a JSON encoded data packet
+
+
+
+In the data property, it may contain the following
+Topics packet:
+	Request:
+		{
+			type: "topics",
+			params: {
+				type: "BW",
+				page: 1,
+				timeLimit: 5
+			}
+		}
+	Response:
+		{
+			lastModified: 123, //a timestamp
+			topics: [{
+				id: 1234567, //topic id
+				title: "abc", //topic title
+				authorID: 123,
+				authorName: "hihi",
+				lastReplyTime: 12345, //a timestamp
+				totalReplies: 1001,
+				rating: 10
+			}]
+		}
+		
+Post packet:
+	Request:
+		{
+			type: "post",
+			params: {
+				id: 1234567, //post id
+				page: 1, //the page number
+				timeLimit: 5
+			}
+		}
+	
+	Response:
+		{
+			lastModified: 123, //a timestamp
+			postData: {
+				title: "hihi",
+				category: "BW",
+				categoryName: "ABC", //the chinese name of the category
+				posts: [{
+					authorID: 123,
+					authorName: "hihi",
+					authorGender: "M",
+					postDate: 123, //timeStamp
+					content: "some content",
+					rid: 1234 //reply id
+				}],
+				replyNum: 10 //total reply number
+			}
+		}

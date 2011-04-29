@@ -1,0 +1,17 @@
+Q. 有無發展路線圖？幾時會出正式版？
+A. 無，只係大約五月底會出beta版
+
+Q. 我係一個end user，我可以點幫手？
+A. 坦白講，我相信而家呢個version 係有唔少bug o既，你可以幫手測試同埋比d comment 我改進一下
+
+Q. 我係一個developer，我可以點幫手？
+A. fix bug，或者幫手諗下點樣可以secure 呢個network，最好join 埋o係google code o既 project
+
+Q. 我係一個designer，我可以點幫手？
+A. 幫手設計一下個界面，除左高登o個幾頁之外仲有setting page
+
+Q. 呢個project 用咩license？
+A. 我唔知咁多:o) 你中意拎去商用又好，自己用又好，無限制
+
+Q. 我想改style，可以點做？
+A. 
