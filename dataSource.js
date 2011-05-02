@@ -73,7 +73,33 @@ dataSource.prototype.getQuote = function (id, rid, callback){
 	
 	request("MessageFunc.asmx/quote_message", function (temp, resHeaders){
 		if (callback != undefined){
-			callback(temp.substr(6, temp.length - 8));
+			var ret = "";
+			
+			try{
+				var tempObj = JSON.parse(temp);
+				ret = tempObj.d;
+			}catch (e){
+				ret = temp.substr(6, temp.length - 8);
+				var map = {
+					"\\\\u003c": "<",
+					"\\\\u003e": ">",
+					"\\\\u0026": "&",
+					"\\\\u0027": "'",
+					"\\\\u0022": "\"",
+					"\\\\\"": "\"",
+					"\\\\r\\\\n": "\r\n",
+					"\\\\r": "\r",
+					"\\\\n": "\n",
+					"\\\\\\\\": "\\"
+				};
+				
+				for (var x in map){
+					ret = ret.replace(new RegExp(x, "gm"), map[x]);
+				}
+			}
+			
+			
+			callback(ret);
 		}
 	}, "POST", headers, reqStr);
 };
@@ -143,7 +169,6 @@ dataSource.prototype.login = function (email, password, callback){
 		"Referer": config.prefix + "login.aspx"
 	};
 	request("login.aspx", function (temp, resHeaders){
-		console.log("Got data");
 		var inputPattern = /<input name="([^"]*)"/g;
 		var inputPattern2 = /<input.*name="([^"]*)".*value="([^"]*)"/g;
 		var formData = {};
@@ -179,10 +204,7 @@ dataSource.prototype.login = function (email, password, callback){
 			"Connection": "close"
 		};
 		
-		console.log("Login");
-		console.log(headers2);
 		request("login.aspx", function (temp2, resHeaders){
-			console.log("Got login data");
 			var cookies2 = resHeaders["set-cookie"];
 			for (var i = 0, l = cookies2.length; i < l; i++){
 				var cookie = cookies2[i];
@@ -190,7 +212,6 @@ dataSource.prototype.login = function (email, password, callback){
 				var match = cookiePattern.exec(cookie);
 				session += ";" + match[1];
 			}
-			console.log(session);
 			
 			if (typeof callback == "function"){
 				callback(session);

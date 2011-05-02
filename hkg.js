@@ -258,28 +258,28 @@ hkg.prototype.request = function (ip, data, callback){
 
 hkg.prototype.visit = function (url, data, stream){
 	var hkgPatterns = [{
-		regex: /http:\/\/forum[0-9]*\.hkgolden\.com\/topics\.aspx\?type=([A-Z]*)&page=([0-9]*)/,
+		regex: /http:\/\/[^\/]*\/topics\.aspx\?type=([A-Z]*)&page=([0-9]*)/,
 		fn: "topics"
 	},{
-		regex: /http:\/\/forum[0-9]*\.hkgolden\.com\/topics\.aspx\?type=([A-Z]*)/,
+		regex: /http:\/\/[^\/]*\/topics\.aspx\?type=([A-Z]*)/,
 		fn: "topics"
 	},{
-		regex: /http:\/\/forum[0-9]*\.hkgolden\.com\/view\.aspx\?.*message=([0-9]*).*page=([0-9]*)/,
+		regex: /http:\/\/[^\/]*\/view\.aspx\?.*message=([0-9]*).*page=([0-9]*)/,
 		fn: "post"
 	},{
-		regex: /http:\/\/forum[0-9]*\.hkgolden\.com\/view\.aspx\?.*message=([0-9]*).*/,
+		regex: /http:\/\/[^\/]*\/view\.aspx\?.*message=([0-9]*).*/,
 		fn: "post"
 	},{
-		regex: /http:\/\/forum[0-9]*\.hkgolden\.com\/post\.aspx\?mt=N&ft=([A-Z]+)/,
+		regex: /http:\/\/[^\/]*\/post\.aspx\?mt=N&ft=([A-Z]+)/,
 		fn: "submitPost"
 	},{
-		regex: /http:\/\/forum[0-9]*\.hkgolden\.com\/post\.aspx\?mt=Y&id=([0-9]+)&ft=([A-Z]+)&rid=([0-9]+)&page=([0-9]+)/,
+		regex: /http:\/\/[^\/]*\/post\.aspx\?mt=Y&id=([0-9]+)&ft=([A-Z]+)&rid=([0-9]+)&page=([0-9]+)/,
 		fn: "submitPost"
 	},{
-		regex: /http:\/\/forum[0-9]*\.hkgolden\.com\/post\.submit/,
+		regex: /http:\/\/[^\/]*\/post\.submit/,
 		fn: "actSubmitPost"
 	},{
-		regex: /http:\/\/forum[0-9]*\.hkgolden\.com\/faces\/(.*)/,
+		regex: /http:\/\/[^\/]*\/faces\/(.*)/,
 		fn: "icon"
 	}];
 	
@@ -301,7 +301,6 @@ hkg.prototype.visit = function (url, data, stream){
 
 
 hkg.prototype.icon = function (stream, _POST, path){
-	logger("Using local icon");
 	var iconFile = fs.createReadStream("img/faces/" + path);
 	iconFile.pipe(stream);
 	return true;
@@ -379,7 +378,7 @@ hkg.prototype.submitPost = function (stream, _POST, id, type, rid, page){
 		}), "binary");
 	};
 	
-	if (rid){
+	if (rid && rid != "0"){
 		dataSourceI.getQuote(id, rid, function (content){
 			renderFn(content);
 		});

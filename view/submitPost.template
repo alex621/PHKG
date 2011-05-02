@@ -32,7 +32,6 @@
 					</tr>
 					<% } %>
 					
-					<% console.log(id); %>
 					<% if (! id){ %>
 					<tr>
 						<td class="lblCol">±i¶K©ó:</td>

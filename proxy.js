@@ -51,8 +51,6 @@ var server = http.createServer(function(request, response) {
 				}
 			}
 		}
-		response.end();
-		return;
 	}
 
 	
@@ -84,11 +82,20 @@ var server = http.createServer(function(request, response) {
 	});
 	request.addListener('end', function() {
 		var hkgRegex = /forum[0-9]*\.hkgolden\.com/;
-		if (request.headers["host"].match(hkgRegex) != null){
+		if (request.headers["host"].match(hkgRegex) != null || request.headers["host"] == thisHost){
 			//it is a hkg request
+			var url = request.url;
+			if (request.headers["host"] == thisHost){
+				if (request.url.search(thisHost) == -1){
+					url = "http://" + thisHost + url;
+				}
+			}
 			
-			var consumed = hkgI.visit(request.url, temp, response);
+			var consumed = hkgI.visit(url, temp, response);
 			if (consumed){
+				return;
+			}else if (request.headers["host"] == thisHost){
+				response.end();
 				return;
 			}
 		}
