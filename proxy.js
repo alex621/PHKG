@@ -54,35 +54,58 @@ var server = http.createServer(function(request, response) {
 		response.end();
 		return;
 	}
-	var hkgRegex = /forum[0-9]*\.hkgolden\.com/;
-	
-	if (request.headers["host"].match(hkgRegex) != null){
-		//it is a hkg request
-		var consumed = hkgI.visit(request.url, response);
-		if (consumed){
-			return;
-		}
-	}
 
 	
-	
-	var proxy = http.createClient(80, request.headers['host']);
-	var proxy_request = proxy.request(request.method, request.url, request.headers);
-	proxy_request.addListener('response', function(proxy_response) {
-		proxy_response.addListener('data', function(chunk) {
-			response.write(chunk);
+	var proxyCB = function (){
+		var proxy = http.createClient(80, request.headers['host']);
+		var proxy_request = proxy.request(request.method, request.url, request.headers);
+		proxy_request.addListener('response', function(proxy_response) {
+			proxy_response.addListener('data', function(chunk) {
+				response.write(chunk);
+			});
+			proxy_response.addListener('end', function() {
+				response.end();
+			});
+			response.writeHead(proxy_response.statusCode, proxy_response.headers);
 		});
-		proxy_response.addListener('end', function() {
-			response.end();
+		
+		request.addListener('data', function(chunk) {
+			proxy_request.write(chunk);
 		});
-		response.writeHead(proxy_response.statusCode, proxy_response.headers);
-	});
+		request.addListener('end', function() {
+			proxy_request.end();
+		});
+	};
 	
+	var temp = "";
+	request.setEncoding("binary");
 	request.addListener('data', function(chunk) {
-		proxy_request.write(chunk);
+		temp += chunk;
 	});
 	request.addListener('end', function() {
-		proxy_request.end();
+		var hkgRegex = /forum[0-9]*\.hkgolden\.com/;
+		if (request.headers["host"].match(hkgRegex) != null){
+			//it is a hkg request
+			
+			var consumed = hkgI.visit(request.url, temp, response);
+			if (consumed){
+				return;
+			}
+		}
+		
+		var proxy = http.createClient(80, request.headers['host']);
+		var proxy_request = proxy.request(request.method, request.url, request.headers);
+		proxy_request.addListener('response', function(proxy_response) {
+			proxy_response.addListener('data', function(chunk) {
+				response.write(chunk);
+			});
+			proxy_response.addListener('end', function() {
+				response.end();
+			});
+			response.writeHead(proxy_response.statusCode, proxy_response.headers);
+		});
+		
+		proxy_request.end(temp, "binary");
 	});
 });
 

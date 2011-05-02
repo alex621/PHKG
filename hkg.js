@@ -1,11 +1,21 @@
 var http = require('http');
 var net = require("net");
+var fs = require('fs');
+var qs = require('querystring');
+qs.unescape = function (str){
+	return unescape(str);
+};
+qs.escape = function (str){
+	return escape(str);
+};
+
 var cache = require("./cache");
+var config = require("./config");
 var logger = require("./logger");
 var dataSource = require("./dataSource");
-var fs = require('fs');
-
 var view = require("./view");
+var user = require("./user");
+var google = require("./google");
 
 module.exports = hkg;
 
@@ -29,6 +39,7 @@ function hkg(){
 	this.iAmAlive();
 	this.getAvailablePeers();
 	this.createServer();
+	//this.channels();
 }
 
 hkg.prototype.iAmAlive = function (){
@@ -245,7 +256,7 @@ hkg.prototype.request = function (ip, data, callback){
 	}
 };
 
-hkg.prototype.visit = function (url, stream){
+hkg.prototype.visit = function (url, data, stream){
 	var hkgPatterns = [{
 		regex: /http:\/\/forum[0-9]*\.hkgolden\.com\/topics\.aspx\?type=([A-Z]*)&page=([0-9]*)/,
 		fn: "topics"
@@ -259,6 +270,15 @@ hkg.prototype.visit = function (url, stream){
 		regex: /http:\/\/forum[0-9]*\.hkgolden\.com\/view\.aspx\?.*message=([0-9]*).*/,
 		fn: "post"
 	},{
+		regex: /http:\/\/forum[0-9]*\.hkgolden\.com\/post\.aspx\?mt=N&ft=([A-Z]+)/,
+		fn: "submitPost"
+	},{
+		regex: /http:\/\/forum[0-9]*\.hkgolden\.com\/post\.aspx\?mt=Y&id=([0-9]+)&ft=([A-Z]+)&rid=([0-9]+)&page=([0-9]+)/,
+		fn: "submitPost"
+	},{
+		regex: /http:\/\/forum[0-9]*\.hkgolden\.com\/post\.submit/,
+		fn: "actSubmitPost"
+	},{
 		regex: /http:\/\/forum[0-9]*\.hkgolden\.com\/faces\/(.*)/,
 		fn: "icon"
 	}];
@@ -269,6 +289,8 @@ hkg.prototype.visit = function (url, stream){
 		if (matches != null){
 			var params = matches;
 			params.shift();
+			var _POST = qs.parse(data);
+			params.unshift(_POST);
 			params.unshift(stream);
 			return this[hkgPattern.fn].apply(this, params);
 		}
@@ -277,15 +299,209 @@ hkg.prototype.visit = function (url, stream){
 	return false;
 };
 
-hkg.prototype.icon = function (stream, path){
+
+hkg.prototype.icon = function (stream, _POST, path){
 	logger("Using local icon");
 	var iconFile = fs.createReadStream("img/faces/" + path);
 	iconFile.pipe(stream);
+	return true;
 };
 
-hkg.prototype.post = function (stream, id, page){
+hkg.prototype.channels = function (){
+	dataSourceI.channels(function (data){
+		if (data != null){
+			cacheI.writeChannels({
+				lastModified: (+new Date),
+				channels: data
+			});
+		}
+	});
+	return true;
+};
+
+hkg.prototype.actSubmitPost = function (stream, _POST){
+	var cb = function (userInfo){
+		qs.escape = function (str){
+			return escape(str);
+		};
+		var id = (_POST["id"] ? _POST["id"] : null);
+		dataSourceI.submitPost(_POST["type"], _POST["title"], _POST["content"], userInfo, id, function (){
+			if (id){
+				stream.writeHead(302, {
+					"Location": "http://forum6.hkgolden.com/view.aspx?message=" + id + "&page=" + _POST["page"]
+				});
+			}else{
+				stream.writeHead(302, {
+					"Location": "http://forum6.hkgolden.com/topics.aspx?type=" + _POST["type"]
+				});
+			}
+			stream.end();
+		});
+	};
+
+	var userInfo = user.getInfo();
+	if (! userInfo.isLoggedIn){
+		user.login(_POST.email, _POST.password, cb);
+	}else{
+		cb(userInfo);
+	}
+	
+	return true;
+};
+
+hkg.prototype.submitPost = function (stream, _POST, id, type, rid, page){
+	if (! type){
+		type = id;
+		id = null;
+	}
+
+	var channelsData = cacheI.readChannels(3600000);
+	var channels = null;
+	if (channelsData){
+		channels = channelsData.channels;
+	}
+	
+	var iconMap = config.iconMap;
+	
+	var userInfo = user.getInfo();
+	
+	var renderFn = function (content){
+		var viewRenderer = new view("submitPost.template");
+		stream.end(viewRenderer.render({
+			id: id,
+			type: type,
+			rid: rid,
+			page: page,
+			content: content,
+			channels: channels,
+			iconMap: iconMap,
+			user: userInfo
+		}), "binary");
+	};
+	
+	if (rid){
+		dataSourceI.getQuote(id, rid, function (content){
+			renderFn(content);
+		});
+	}else{
+		renderFn("");
+	}
+	
+	return true;
+};
+
+hkg.prototype.standardProcess = function (renderFn, cacheReader, cacheWriter, reqData, dataSourceFn){
 	var tht = this;
-	var render = function (data){
+	
+	var localCache = cacheReader();
+	if (localCache != null){
+		logger("Got data from local cache");
+		renderFn(localCache);
+		return true;
+	}
+	
+	var received = false;
+	var resFromPeers = 0;
+	var requestedHKG = false;
+	
+	var cb = function (data){
+		logger("Got data");
+		
+		if ((data != null) && (!received)){
+			logger("Data is not null");
+			received = true;
+			cacheWriter(data);
+			renderFn(data);
+		}
+		
+		resFromPeers++;
+		if ((resFromPeers >= tht.numOfConnected) && (! received) && (!requestedHKG)){
+			reqHKG();
+		}
+	};
+	
+	
+	var reqHKG = function (){
+		if ((! received) && (! requestedHKG)){
+			//not received, then go to hkgolden directly
+			logger("Getting data from hkgolden directly");
+			
+			requestedHKG = true;
+			
+			dataSourceFn(cb);
+		}
+	};
+	
+	if (this.numOfConnected == 0){
+		reqHKG();
+	}else{
+		setTimeout(reqHKG, 3000);
+	}
+	
+	for (var x in this.connectedPeers){
+		logger("Requesting " + x + " for topics");
+		this.request(x, reqData, cb);
+	}
+};
+
+hkg.prototype.topics = function (stream, _POST, type, page){
+	var tht = this;
+	var renderFn = function (data){
+		var channelsData = cacheI.readChannels(3600000);
+		var channels = null;
+		if (channelsData){
+			channels = channelsData.channels;
+		}
+		
+		var viewRenderer = new view("topics.template");
+		stream.end(viewRenderer.render({
+			type: type,
+			page: page,
+			topics: data.topics,
+			channels: channels
+		}), "binary");
+	};
+
+	if (page == undefined){
+		page = 1;
+	}
+	
+	var timeLimit = 5000;
+	
+	var cacheReader = function (){
+		return cacheI.readTopics(type, page, timeLimit);
+	};
+	
+	var cacheWriter = function (data){
+		cacheI.writeTopics(type, page, data);
+	};
+	
+	var reqData = {
+		type: "topics",
+		params: {
+			type: type,
+			page: page,
+			timeLimit: timeLimit
+		}
+	};
+	
+	var dataSourceFn = function (cb){
+		dataSourceI.topics(type, page, function (data){
+			cb({
+				lastModified: (+new Date),
+				topics: data
+			});
+		});
+	};
+	
+	this.standardProcess(renderFn, cacheReader, cacheWriter, reqData, dataSourceFn);
+	
+	return true;
+};
+
+hkg.prototype.post = function (stream, _POST, id, page){
+	var tht = this;
+	var renderFn = function (data){
 		var viewRenderer = new view("post.template");
 		stream.end(viewRenderer.render({
 			id: id,
@@ -299,15 +515,15 @@ hkg.prototype.post = function (stream, id, page){
 	}
 	var timeLimit = 5000;
 	
-	var localCache = cacheI.readPost(id, page, timeLimit);
-	if (localCache != null){
-		logger("Got data from local cache");
-		render(localCache);
-		return true;
-	}
+	var cacheReader = function (){
+		return cacheI.readPost(id, page, timeLimit);
+	};
 	
-	var received = false;
-	var req = {
+	var cacheWriter = function (data){
+		cacheI.writePost(id, page, data);
+	};
+	
+	var reqData = {
 		type: "post",
 		params: {
 			id: id,
@@ -316,135 +532,16 @@ hkg.prototype.post = function (stream, id, page){
 		}
 	};
 	
-	var resFromPeers = 0;
-	var requestedHKG = false;
-	
-	var cb = function (data){
-		logger("Got data");
-		
-		if ((data != null) && (!received)){
-			logger("Data is not null");
-			received = true;
-			cacheI.writePost(id, page, data);
-			//stream.end("Got data: " + JSON.stringify(data), "binary");
-			render(data);
-		}
-		
-		resFromPeers++;
-		if ((resFromPeers >= tht.numOfConnected) && (! received) && (!requestedHKG)){
-			reqHKG();
-		}
-	};
-	
-	var reqHKG = function (){
-		if ((! received) && (! requestedHKG)){
-			//not received, then go to hkgolden directly
-			logger("Getting data from hkgolden directly");
-			
-			requestedHKG = true;
-			
-			dataSourceI.post(id, page, function (data){
-				cb({
-					lastModified: (+new Date),
-					post: data
-				});
+	var dataSourceFn = function (cb){
+		dataSourceI.post(id, page, function (data){
+			cb({
+				lastModified: (+new Date),
+				post: data
 			});
-		}
+		});
 	};
 	
-	if (this.numOfConnected == 0){
-		reqHKG();
-	}else{
-		setTimeout(reqHKG, 3000);
-	}
-	
-	for (var x in this.connectedPeers){
-		logger("Requesting " + x + " for post");
-		this.request(x, req, cb);
-	}
-	
-	return true;
-};
-
-hkg.prototype.topics = function (stream, type, page){
-	var tht = this;
-	var render = function (data){
-		var viewRenderer = new view("topics.template");
-		stream.end(viewRenderer.render({
-			type: type,
-			page: page,
-			topics: data.topics
-		}), "binary");
-	};
-
-	if (page == undefined){
-		page = 1;
-	}
-	
-	var timeLimit = 5000;
-	
-	var localCache = cacheI.readTopics(type, page, timeLimit);
-	if (localCache != null){
-		logger("Got data from local cache");
-		render(localCache);
-		return true;
-	}
-	
-	var received = false;
-	var req = {
-		type: "topics",
-		params: {
-			type: type,
-			page: page,
-			timeLimit: timeLimit
-		}
-	};
-	
-	var resFromPeers = 0;
-	var requestedHKG = false;
-	
-	var cb = function (data){
-		logger("Got data");
-		
-		if ((data != null) && (!received)){
-			logger("Data is not null");
-			received = true;
-			cacheI.writeTopics(type, page, data);
-			render(data);
-		}
-		
-		resFromPeers++;
-		if ((resFromPeers >= tht.numOfConnected) && (! received) && (!requestedHKG)){
-			reqHKG();
-		}
-	};
-	
-	var reqHKG = function (){
-		if ((! received) && (! requestedHKG)){
-			//not received, then go to hkgolden directly
-			logger("Getting data from hkgolden directly");
-			
-			requestedHKG = true;
-			
-			dataSourceI.topics(type, page, function (data){
-				cb({
-					lastModified: (+new Date),
-					topics: data
-				});
-			});
-		}
-	};
-	
-	if (this.numOfConnected == 0){
-		reqHKG();
-	}else{
-		setTimeout(reqHKG, 3000);
-	}
-	
-	for (var x in this.connectedPeers){
-		logger("Requesting " + x + " for topics");
-		this.request(x, req, cb);
-	}
+	this.standardProcess(renderFn, cacheReader, cacheWriter, reqData, dataSourceFn);
 	
 	return true;
 };

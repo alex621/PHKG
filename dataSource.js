@@ -3,6 +3,13 @@ var fs = require('fs');
 var path = require('path');
 var config = require("./config");
 var logger = require("./logger");
+var qs = require('querystring');
+qs.unescape = function (str){
+	return unescape(str);
+};
+qs.escape = function (str){
+	return escape(str);
+};
 
 module.exports = dataSource;
 
@@ -15,7 +22,7 @@ function dataSource(){
 }
 
 //common function for requesting hkgolden
-var request = function (url, callback, method, headers){
+var request = function (url, callback, method, headers, data){
 	if (! method){
 		method = "GET";
 	}
@@ -42,11 +49,154 @@ var request = function (url, callback, method, headers){
 		});
 		res.addListener('end', function() { //full packet received
 			if (typeof callback == "function"){
-				callback(temp);
+				callback(temp, res.headers);
 			}
 		});
 	});
-	hkgReq.end();
+	if (data != undefined){
+		hkgReq.end(data, "binary");
+	}else{
+		hkgReq.end();
+	}
+};
+
+dataSource.prototype.getQuote = function (id, rid, callback){
+	var reqStr = "{'s_MessageID':" + id + ",'s_ReplyID':" + rid + "}";
+	var headers = {
+		"Host": config.host,
+		"User-Agent": "Mozilla/5.0 (X11; U; Linux i686; zh-TW; rv:1.9) Gecko/2008061015 Firefox/3.0",
+		"Referer": config.prefix + "default.aspx",
+		"Content-Type": "application/json; charset=utf-8",
+		"Content-Length": reqStr.length,
+		"Connection": "close"
+	};
+	
+	request("MessageFunc.asmx/quote_message", function (temp, resHeaders){
+		if (callback != undefined){
+			callback(temp.substr(6, temp.length - 8));
+		}
+	}, "POST", headers, reqStr);
+};
+
+dataSource.prototype.submitPost = function (type, title, content, userInfo, replyTo, callback){
+	var gurl;
+	if (replyTo) {
+		gurl = "post.aspx?mt=Y&ft=" + type + "&rid=0&id=" + replyTo;
+	} else {
+		gurl = "post.aspx?mt=N&ft=" + type;
+	}
+	
+	var headers1 = {
+		"Host": config.host,
+		"User-Agent": "Mozilla/5.0 (X11; U; Linux i686; zh-TW; rv:1.9) Gecko/2008061015 Firefox/3.0",
+		"Referer": config.prefix + "login.aspx",
+		"Cookie": userInfo.session,
+		"Connection": "close"
+	};
+	
+	request(gurl, function (temp, resHeaders){
+		var inputPattern = /<input name="([^"]*)"/g;
+		var inputPattern2 = /<input.*name="([^"]*)".*value="([^"]*)"/g;
+		var formData = {};
+		var matches;
+		while (matches = inputPattern.exec(temp)){
+			formData[matches[1]] = "";
+		}
+		while (matches = inputPattern2.exec(temp)){
+			formData[matches[1]] = matches[2];
+		}
+		
+		formData['messagetype'] = 'Y';
+		formData['ctl00$ContentPlaceHolder1$ddl_forum_type'] = type;
+		formData['ctl00$ContentPlaceHolder1$messagesubject'] = title;
+		formData['ctl00$ContentPlaceHolder1$messagetext'] = content;
+		formData['ctl00$ContentPlaceHolder1$btn_Submit.x'] = 41;
+		formData['ctl00$ContentPlaceHolder1$btn_Submit.y'] = 9;
+		formData['ctl00$ContentPlaceHolder1$btn_Submit'] = 'I1';
+		
+		var postData = qs.stringify(formData);
+		var headers2 = {
+			"Host": config.host,
+			"User-Agent": "Mozilla/5.0 (X11; U; Linux i686; zh-TW; rv:1.9) Gecko/2008061015 Firefox/3.0",
+			"Referer": config.prefix + gurl,
+			"Content-Length": postData.length,
+			"Content-Type": "application/x-www-form-urlencoded",
+			"Cookie": userInfo.session,
+			"Connection": "close"     
+		};
+		
+		request(gurl, function (temp2, resHeaders2){
+			if (callback != undefined){
+				callback();
+			}
+		}, "POST", headers2, postData);
+	}, "GET", headers1);
+};
+
+dataSource.prototype.login = function (email, password, callback){
+	logger("Trying to login");
+	var session = "";
+	
+	var headers1 = {
+		"Host": config.host,
+		"User-Agent": "Mozilla/5.0 (X11; U; Linux i686; zh-TW; rv:1.9) Gecko/2008061015 Firefox/3.0",
+		"Referer": config.prefix + "login.aspx"
+	};
+	request("login.aspx", function (temp, resHeaders){
+		console.log("Got data");
+		var inputPattern = /<input name="([^"]*)"/g;
+		var inputPattern2 = /<input.*name="([^"]*)".*value="([^"]*)"/g;
+		var formData = {};
+		var matches;
+		while (matches = inputPattern.exec(temp)){
+			formData[matches[1]] = "";
+		}
+		while (matches = inputPattern2.exec(temp)){
+			formData[matches[1]] = matches[2];
+		}
+		formData["ctl00$ContentPlaceHolder1$txt_email"] = email;
+		formData["ctl00$ContentPlaceHolder1$txt_pass"] = password;
+		formData["ctl00$ContentPlaceHolder1$cb_remember_login"] = "on";
+		
+		var sessionPattern = /(ASP\.NET_SessionId[^;]*);/g;
+		var cookies = resHeaders["set-cookie"];
+		for (var i = 0, l = cookies.length; i < l; i++){
+			var cookie = cookies[i];
+			
+			if (matches = sessionPattern.exec(cookie)){
+				session = matches[1];
+			}
+		}
+		
+		var postData = qs.stringify(formData);
+		var headers2 = {
+			"Host": config.host,
+			"User-Agent": "Mozilla/5.0 (X11; U; Linux i686; zh-TW; rv:1.9) Gecko/2008061015 Firefox/3.0",
+			"Referer": config.prefix + "login.aspx",
+			"Content-Length": postData.length,
+			"Content-Type": "application/x-www-form-urlencoded",
+			"Cookie": session,
+			"Connection": "close"
+		};
+		
+		console.log("Login");
+		console.log(headers2);
+		request("login.aspx", function (temp2, resHeaders){
+			console.log("Got login data");
+			var cookies2 = resHeaders["set-cookie"];
+			for (var i = 0, l = cookies2.length; i < l; i++){
+				var cookie = cookies2[i];
+				var cookiePattern = /^([^;]*);/;
+				var match = cookiePattern.exec(cookie);
+				session += ";" + match[1];
+			}
+			console.log(session);
+			
+			if (typeof callback == "function"){
+				callback(session);
+			}
+		}, "POST", headers2, postData);
+	}, "POST", headers1);
 };
 
 dataSource.prototype.topics = function (type, page, callback){
@@ -148,6 +298,40 @@ dataSource.prototype.post = function (id, page, callback){
 		
 		if (typeof callback == "function"){
 			callback(post);
+		}
+	});
+};
+
+dataSource.prototype.channels = function (callback){
+	request("", function (temp){
+		var channels = [];
+		try{
+			var channelPattern = /<a class=\"BoxLink2\" href=\"\/topics\.aspx\?type=([A-Z]+)\">(.*?)<\/div>/g;
+			
+			while (matches = channelPattern.exec(temp)){
+				var namePattern = /^([^<]*)/g;
+				var tagPattern = /<a[^>]*>(.*?)<\/a>/g;
+				var channel = {
+					id: matches[1]
+				};
+				
+				var content = matches[2];
+				matches = namePattern.exec(content);
+				channel.name = matches[1];
+				channel.tags = [];
+				
+				while (tagMatches = tagPattern.exec(content)){
+					channel.tags.push(tagMatches[1]);
+				}
+				
+				channels.push(channel);
+			}
+		}catch (e){
+			//parse error
+		}
+		
+		if (typeof callback == "function"){
+			callback(channels);
 		}
 	});
 };

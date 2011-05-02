@@ -1,0 +1,134 @@
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=Big5" />
+		<title>PHKG - 發表</title>
+		<link rel="stylesheet" type="text/css" href="<%= config.thisHTTPPath %>css/style.css" />
+		<script type="text/javascript" src="<%= config.thisHTTPPath %>js/jquery-1.5.2.min.js"></script>
+		<script type="text/javascript" src="<%= config.thisHTTPPath %>js/submitPost.js"></script>
+	</head>
+	<body id="submitPost">
+		<form method="POST" action="http://forum6.hkgolden.com/post.submit">
+			<table cellspacing="0" cellpadding="0">
+				<thead>
+					<tr>
+						<td colspan="2">輸入以下項目</td>
+					</tr>
+				</thead>
+				<tbody>
+					
+					<% if ((! user) || (! user.isLoggedIn)){ %>
+					<tr>
+						<td class="lblCol">電郵地址:</td>
+						<td><input name="email" /></td>
+					</tr>
+					<tr>
+						<td class="lblCol">密碼:</td>
+						<td><input type="password" name="password" /></td>
+					</tr>
+					<% }else{ %>
+					<tr>
+						<td class="lblCol">已登入電郵:</td>
+						<td><%=user.email%></td>
+					</tr>
+					<% } %>
+					
+					<% console.log(id); %>
+					<% if (! id){ %>
+					<tr>
+						<td class="lblCol">張貼於:</td>
+						<td>
+							<select name="type">
+								<option value="BW">吹水台</option>
+								<% if (channels && channels.length > 0){ %>
+								<% for (var i = 0, l = channels.length; i < l; i++){ %>
+								<option value="<%=stripDangerousTags(channels[i].id)%>">
+									<%=stripDangerousTags(channels[i].name)%>
+								</option>
+								<% } %>
+								<% } %>
+							</select>
+						</td>
+					</tr>
+					
+					<tr>
+						<td class="lblCol">主旨:</td>
+						<td>
+							<input name="title" />
+						</td>
+					</tr>
+					<% } %>
+					
+					<tr>
+						<td class="lblCol">內文:</td>
+						<td>
+							<% if (id){ %>
+							<input type="hidden" name="id" value="<%=id%>" />
+							<input type="hidden" name="page" value="<%=page%>" />
+							<% } %>
+							<div class="formatToolbar">
+								<span class="primary">
+									<img class="btn image" tag="[img],圖片網址,[/img]" src="<%= config.thisHTTPPath %>img/toolbar/image.gif" />
+									<img class="btn url" tag="[url],網址,[/url]" src="<%= config.thisHTTPPath %>img/toolbar/url.gif" />
+									<img class="btn quote" tag="[quote],引文,[/quote]" src="<%= config.thisHTTPPath %>img/toolbar/quote.gif" />
+									<img class="btn bullet" src="<%= config.thisHTTPPath %>img/toolbar/bullet.gif" />
+									<img class="btn leftjust" tag="[left],靠左,[/left]" src="<%= config.thisHTTPPath %>img/toolbar/leftjust.gif" />
+									<img class="btn centered" tag="[center],置中,[/center]" src="<%= config.thisHTTPPath %>img/toolbar/centered.gif" />
+									<img class="btn rightjust" tag="[right],靠右,[/right]" src="<%= config.thisHTTPPath %>img/toolbar/rightjust.gif" />
+									<img class="btn bold" tag="[b],粗體,[/b]" src="<%= config.thisHTTPPath %>img/toolbar/text_bold.png" />
+									<img class="btn italic" tag="[i],斜體,[/i]" src="<%= config.thisHTTPPath %>img/toolbar/text_italic.png" />
+									<img class="btn underline" tag="[u],底線,[/u]" src="<%= config.thisHTTPPath %>img/toolbar/text_underline.png" />
+									<img class="btn strikethrough" tag="[s],刪除線,[/s]" src="<%= config.thisHTTPPath %>img/toolbar/text_strikethrough.png" />
+								</span>
+								
+								 <select size="1" class="fontsize">
+									<option value=",," selected="selected">字型大小</option>
+									<option value="[size=6],超大,[/size=6]">[size=6]超大[/size=6]</option>
+									<option value="[size=5],特大,[/size=5]">[size=5]特大[/size=5]</option>
+									<option value="[size=4],大,[/size=4]">[size=4]大[/size=4]</option>
+									<option value="[size=3],一般,[/size=3]">[size=3]一般[/size=3]</option>
+									<option value="[size=2],小,[/size=2]">[size=2]小[/size=2]</option>
+									<option value="[size=1],特小,[/size=1]">[size=1]特小[/size=1]</option>
+								</select>
+								<select size="1" class="fontcolor">
+									<option value=",," selected="selected">字型顏色</option>
+									<option value="[red],紅色,[/red]" style="color: red;">[red]紅色[/red]</option>
+									<option value="[green],綠色,[/green]" style="color: green; background-color: #F1F2F3;">[green]綠色[/green]</option>
+									<option value="[blue],藍色,[/blue]" style="color: blue;">[blue]藍色[/blue]</option>
+									<option value="[purple],紫色,[/purple]" style="color: purple; background-color: #F1F2F3;">[purple]紫色[/purple]</option>
+									<option value="[violet],紫紅,[/violet]" style="color: violet;">[violet]紫紅[/violet]</option>
+									<option value="[brown],棕色,[/brown]" style="color: brown; background-color: #F1F2F3;">[brown]棕色[/brown]</option>
+									<option value="[black],黑色,[/black]" style="color: black;">[black]黑色[/black]</option>
+									<option value="[pink],粉紅,[/pink]" style="color: pink; background-color: #F1F2F3;">[pink]粉紅[/pink]</option>
+									<option value="[orange],橙色,[/orange]" style="color: orange;">[orange]橙色[/orange]</option>
+									<option value="[gold],金色,[/gold]" style="color: gold; background-color: #F1F2F3;">[gold]金色[/gold]</option>
+									<option value="[maroon],深紅,[/maroon]" style="color: maroon;">[maroon]深紅[/maroon]</option>
+									<option value="[teal],淺藍,[/teal]" style="color: teal; background-color: #F1F2F3;">[teal]淺藍[/teal]</option>
+									<option value="[navy],深藍,[/navy]" style="color: navy;">[navy]深藍[/navy]</option>
+									<option value="[limegreen],淺綠,[/limegreen]" style="color: limegreen; background-color: #F1F2F3;">[limegreen]淺綠[/limegreen]</option>
+								</select>
+							</div>
+							<textarea name="content"><%=content%></textarea>
+						</td>
+					</tr>
+					
+					<tr>
+						<td class="lblCol">插入表情圖示:</td>
+						<td>
+							<div class="icons">
+								<% for (var code in iconMap){ %>
+								<img class="icon" code="<%=code%>" src="http://forum6.hkgolden.com/faces/<%=iconMap[code]%>" />
+								<% } %>
+							</div>
+						</td>
+					</tr>
+					
+					<tr>
+						<td colspan="2">
+							<input class="submit" type="submit" value="發表" />
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</form>
+	</body>
+</html>

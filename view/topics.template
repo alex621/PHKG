@@ -7,6 +7,25 @@
 		<script type="text/javascript" src="<%= config.thisHTTPPath %>js/topicsList.js"></script>
 	</head>
 	<body id="topicsList">
+		<div class="categoryList">
+			前往
+			<a href="http://forum6.hkgolden.com/topics.aspx?type=BW">吹水台</a>
+			
+			<% if (channels != null && channels.length > 0){ %>
+			或其他
+			<select href="http://forum6.hkgolden.com/topics.aspx?type=">
+				<option value="">請選擇</option>
+				<% for (var i = 0, l = channels.length; i < l; i++){ %>
+				<option value="<%= stripDangerousTags(channels[i].id) %>"><%= stripDangerousTags(channels[i].name) %></option>
+				<% } %>
+			</select>
+			<% } %>
+		</div>
+		
+		<div class="tools">
+			<a href="http://forum6.hkgolden.com/post.aspx?mt=N&ft=<%=type%>">發表</a>
+		</div>
+	
 		<table cellspacing="0" cellpadding="0" id="topicsListTbl">
 			<thead>
 				<tr>

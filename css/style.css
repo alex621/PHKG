@@ -42,27 +42,42 @@ table#topicsListTbl .ratingCol{
 	width: 6%;
 }
 
-#topicsList  .pagin{
+#topicsList .categoryList{
+	margin: 7px;
+	position: relative;
+}
+
+#topicsList .tools{
+	margin: 7px;
+}
+#topicsList .tools a{
+	margin-right: 5px;
+	text-decoration: none;
+	color: blue;
+	border-bottom: 1px solid blue;
+}
+
+#topicsList .pagin{
 	border: 1px solid black;
 	width: 921px;
 	margin: 15px auto;
 }
-#topicsList  .pagin .headBar{
+#topicsList .pagin .headBar{
 	height: 9px;
 	background: #369;
 }
-#topicsList  .pagin .body{
+#topicsList .pagin .body{
 	background: #F7F3F7;
 	height: 56px;
 	position: relative;
 }
-#topicsList  .pagin .body a.prev{
+#topicsList .pagin .body a.prev{
 	position: absolute;
 	top: 50%;
 	margin-top: -8px;
 	left: 15px;
 }
-#topicsList  .pagin .body a.next{
+#topicsList .pagin .body a.next{
 	position: absolute;
 	top: 50%;
 	margin-top: -8px;
@@ -85,9 +100,21 @@ table#topicsListTbl .ratingCol{
 	font-size: 14px;
 	color: #999;
 }
+
+#postPage .tools{
+	margin: 7px;
+}
+#postPage .tools a{
+	margin-right: 5px;
+	text-decoration: none;
+	color: blue;
+	border-bottom: 1px solid blue;
+}
+
 #postPage .post{
 	border: 1px solid black;
 	margin-top: 10px;
+	background: #F3F2F1;
 }
 #postPage .post .heading{
 	background: #369;
@@ -99,8 +126,11 @@ table#topicsListTbl .ratingCol{
 	font-size: 14px;
 }
 #postPage .post .content{
-	background: #F3F2F1;
 	padding: 7px;
+}
+#postPage .post .quoteBlk{
+	padding: 7px;
+	text-align: right;
 }
 #postPage .pagination{
 	border: 1px solid black;
@@ -122,4 +152,51 @@ table#topicsListTbl .ratingCol{
 }
 #postPage .pagination  .body .jumpLink{
 	text-align: center;
+}
+
+
+#submitPost table{
+	background: #F3F2F1;
+	border: 1px solid black;
+	width: 925px;
+	border-collapse: collapse;
+}
+#submitPost table thead{
+	background-color: #336699;
+	font-weight: bold;
+	color: white;
+}
+#submitPost table td{
+	border: 1px solid #808080;
+	padding: 3px;
+}
+#submitPost table .lblCol{
+	text-align: right;
+	width: 133px;
+	padding: 3px;
+}
+#submitPost table td{
+	border: 1px solid #808080;
+	padding: 3px;
+}
+#submitPost table input{
+	width: 300px;
+}
+#submitPost table input.submit{
+	width: 100%;
+	font-size: 24px;
+}
+#submitPost table textarea{
+	width: 600px;
+	height: 200px;
+}
+#submitPost .icons{
+	width: 512px;
+}
+#submitPost .icons .icon{
+	cursor: pointer;
+}
+#submitPost .formatToolbar .primary .btn{
+	cursor: pointer;
+	vertical-align: middle;
 }

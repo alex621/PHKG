@@ -18,7 +18,15 @@ view.prototype.render = function (data){
 	};
 	data.hkgTimeFormat = function (str){
 		var d = new Date(parseInt(str));
-		return (d.getMonth() + 1) + "/" + d.getDate() + "/" + d.getFullYear() + " " + d.getHours() + ":" + d.getMinutes();
+		d.setTime(d.getTime() + 8 * 3600 * 1000);
+		var min = d.getMinutes();
+		var hr = d.getHours();
+		var meridiem = "AM";
+		if (hr > 12){
+			hr = hr - 12;
+			meridiem = "PM";
+		}
+		return (d.getMonth() + 1) + "/" + d.getDate() + "/" + d.getFullYear() + " " + hr + ":" + (min < 10 ? "0" + min : min) + " " + meridiem;
 	};
 	data.config = config;
 	

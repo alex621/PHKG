@@ -1,5 +1,10 @@
 <%
 var renderPagination = function (id, page, totalPage){
+	var tP = parseInt(totalPage);
+	if (tP < 1){
+		totalPage = 1;
+	}
+
 	var ret = "<div class=\"pagination\"><div class=\"heading\"></div>";
 	ret += "<div class=\"body\">";
 	if (page > 1){
@@ -10,17 +15,14 @@ var renderPagination = function (id, page, totalPage){
 		ret += "<a class=\"nextLink\" href=\"http://forum6.hkgolden.com/view.aspx?message="+id+"&page="+(page + 1)+"\">下一頁</a>";
 	}
 	
-	if (totalPage > 1){
-		ret += "<div class=\"jumpLink\">跳至第" +
-					"<select href=\"http://forum6.hkgolden.com/view.aspx?message="+id+"&page=\">";
-		for (var i = 1; i <= totalPage; i++){
-			ret += "<option value=\"" + i + "\"" +
-						(i == page ? " selected=\"selected\"" : "")
-					+ ">"+i+"</option>";
-		}
-		
-		ret += "</select>頁</div>";
+	ret += "<div class=\"jumpLink\">跳至第" +
+				"<select href=\"http://forum6.hkgolden.com/view.aspx?message="+id+"&page=\">";
+	for (var i = 1; i <= totalPage; i++){
+		ret += "<option value=\"" + i + "\"" +
+					(i == page ? " selected=\"selected\"" : "")
+				+ ">"+i+"</option>";
 	}
+	ret += "</select>頁</div>";
 	
 	ret += "</div><div class=\"cb\"></div></div>";
 	
@@ -40,6 +42,8 @@ var renderPagination = function (id, page, totalPage){
 		var totalPage = Math.ceil(parseInt(post.replyNum) / 25);
 		var page = parseInt(page);
 		var id = parseInt(id);
+		post.category = stripDangerousTags(post.category);
+		post.categoryName = stripDangerousTags(post.categoryName);
 		%>
 		
 		<div class="breadcrumb">
@@ -49,6 +53,11 @@ var renderPagination = function (id, page, totalPage){
 			<% }else{ %>
 			&raquo; <a href="http://forum6.hkgolden.com/topics.aspx?type=BW">吹水台</a>
 			<% } %>
+		</div>
+		
+		<div class="tools">
+			<a href="http://forum6.hkgolden.com/post.aspx?mt=N&ft=BW">發表</a>
+			<a href="http://forum6.hkgolden.com/post.aspx?mt=Y&id=<%=id%>&ft=<%=post.category%>&rid=0&page=<%=page%>">回覆</a>
 		</div>
 		
 		<h1 class="title"><%= stripDangerousTags(post.title) %> <small> <%= stripDangerousTags(post.replyNum) %> 個回覆</small></h1>
@@ -63,6 +72,9 @@ var renderPagination = function (id, page, totalPage){
 				<span class="time">張貼於 <%= hkgTimeFormat(postData.postDate) %></span>
 			</div>
 			<div class="content"><%= stripDangerousTags(postData.content) %></div>
+			<div class="quoteBlk">
+				<a href="http://forum6.hkgolden.com/post.aspx?mt=Y&id=<%=id%>&ft=<%=post.category%>&rid=<%=postData.rid%>&page=<%=page%>">引用回覆</a>
+			</div>
 		</div>
 		<% } %>
 	
