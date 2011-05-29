@@ -2,7 +2,7 @@ var config = {
 	debug: true,
 	useUpnp: false, //to be implemented
 	
-	proxyPort: 8080,
+	proxyPort: 8964,
 	
 	tmpPath: "tmp/",
 	userPath: "user/",

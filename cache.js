@@ -9,6 +9,20 @@ function cache(){
 	this.tmpPath = config.tmpPath;
 }
 
+cache.prototype.garbageCollect = function (){
+	var tmpPath = this.tmpPath;
+	fs.readdir(this.tmpPath, function (err, files){
+		if (files){
+			for (var i = 0, l = files.length; i < l; i++){
+				var file = files[i];
+				if (file != "channels"){
+					fs.unlink(tmpPath + file);
+				}
+			}
+		}
+	});
+};
+
 cache.prototype.readTopics = function (type, page, timeLimit){
 	//need to implement validation
 	var fileName = type + "-" + page;
@@ -61,7 +75,12 @@ cache.prototype.readPost = function (id, page, timeLimit){
 		if (content == ""){
 			return null;
 		}
-		var packet = JSON.parse(content);
+		var packet;
+		try{
+			packet = JSON.parse(content);
+		}catch (e){
+			return null;
+		}
 		
 		var lastMod = new Date(packet.lastModified);
 		var limitDate = new Date((new Date) - timeLimit);
@@ -94,7 +113,12 @@ cache.prototype.readChannels = function (timeLimit){
 		if (content == ""){
 			return null;
 		}
-		var packet = JSON.parse(content);
+		var packet;
+		try{
+			packet = JSON.parse(content);
+		}catch (e){
+			return null;
+		}
 		
 		var lastMod = new Date(packet.lastModified);
 		var limitDate = new Date((new Date) - timeLimit);

@@ -36,10 +36,18 @@ function hkg(){
 	this.numOfConnected = 0;
 	this.bufferData = {};
 	
+	this.createServer();
 	this.iAmAlive();
 	this.getAvailablePeers();
-	this.createServer();
-	//this.channels();
+	
+	var tht = this;
+	setInterval(function (){
+		tht.iAmAlive();
+		tht.getAvailablePeers();
+	}, 3600000);
+	
+	user.logout();
+	cacheI.garbageCollect();
 }
 
 hkg.prototype.iAmAlive = function (){
@@ -53,6 +61,7 @@ hkg.prototype.iAmAlive = function (){
 
 hkg.prototype.createServer = function (){
 	var tht = this;
+	
 	var server = net.createServer(function (sock){
 		sock.setEncoding("binary");
 		sock.addListener("connect", function (){
@@ -130,7 +139,12 @@ hkg.prototype.getAvailablePeers = function (){
 			temp += chunk;
 		});
 		res.addListener('end', function() {
-			var obj = JSON.parse(temp);
+			var obj = {};
+			try{
+				obj = JSON.parse(temp);
+			}catch (e){
+				return;
+			}
 			if (obj.success){
 				tht.availablePeers = obj.msg;
 				tht.newPeersMayAvailable();
@@ -198,7 +212,13 @@ hkg.prototype.processRequest = function (ip, data){
 		logger("Got a packet from: " + ip);
 		logger("Data: " + data);
 		var sock = this.connectedPeers[ip];
-		var packet = JSON.parse(data);
+		var packet = {};
+		try{
+			packet = JSON.parse(data);
+		}catch (e){
+			//parse error, not sending back anything
+			return;
+		}
 		if (! packet.isResponse){
 			//consume it
 			var responsePacket = {
@@ -243,7 +263,13 @@ hkg.prototype.request = function (ip, data, callback){
 		logger("Data to write: " + dataToWrite);
 		sock.write(dataToWrite, "binary");
 		var cb = function (toIP, data){
-			var packet = JSON.parse(data);
+			var packet = {};
+			try{
+				packet = JSON.parse(data);
+			}catch (e){
+				//parse error
+				return;
+			}
 			if (packet.id == packetID){
 				//consume it
 				sock.removeListener("fullPacket", cb);
@@ -258,6 +284,9 @@ hkg.prototype.request = function (ip, data, callback){
 
 hkg.prototype.visit = function (url, data, stream){
 	var hkgPatterns = [{
+		regex: /http:\/\/[^\/]*\/$/,
+		fn: "topics"
+	},{
 		regex: /http:\/\/[^\/]*\/topics\.aspx\?type=([A-Z]*)&page=([0-9]*)/,
 		fn: "topics"
 	},{
@@ -319,7 +348,14 @@ hkg.prototype.channels = function (){
 };
 
 hkg.prototype.actSubmitPost = function (stream, _POST){
+	var tht = this;
 	var cb = function (userInfo){
+		if (userInfo == "LoginError"){
+			//logout first
+			user.logout();
+			tht.submitPost(stream, _POST, _POST["id"], _POST["type"], "0", _POST["page"], _POST["title"], _POST["content"], "LoginError");
+			return;
+		}
 		qs.escape = function (str){
 			return escape(str);
 		};
@@ -327,11 +363,11 @@ hkg.prototype.actSubmitPost = function (stream, _POST){
 		dataSourceI.submitPost(_POST["type"], _POST["title"], _POST["content"], userInfo, id, function (){
 			if (id){
 				stream.writeHead(302, {
-					"Location": "http://forum6.hkgolden.com/view.aspx?message=" + id + "&page=" + _POST["page"]
+					"Location": "view.aspx?message=" + id + "&page=" + _POST["page"]
 				});
 			}else{
 				stream.writeHead(302, {
-					"Location": "http://forum6.hkgolden.com/topics.aspx?type=" + _POST["type"]
+					"Location": "topics.aspx?type=" + _POST["type"]
 				});
 			}
 			stream.end();
@@ -348,7 +384,7 @@ hkg.prototype.actSubmitPost = function (stream, _POST){
 	return true;
 };
 
-hkg.prototype.submitPost = function (stream, _POST, id, type, rid, page){
+hkg.prototype.submitPost = function (stream, _POST, id, type, rid, page, _title, _content, error){
 	if (! type){
 		type = id;
 		id = null;
@@ -364,14 +400,16 @@ hkg.prototype.submitPost = function (stream, _POST, id, type, rid, page){
 	
 	var userInfo = user.getInfo();
 	
-	var renderFn = function (content){
+	var renderFn = function (content, title){
 		var viewRenderer = new view("submitPost.template");
 		stream.end(viewRenderer.render({
 			id: id,
 			type: type,
 			rid: rid,
 			page: page,
+			title: title ? title : "",
 			content: content,
+			error: error,
 			channels: channels,
 			iconMap: iconMap,
 			user: userInfo
@@ -383,13 +421,13 @@ hkg.prototype.submitPost = function (stream, _POST, id, type, rid, page){
 			renderFn(content);
 		});
 	}else{
-		renderFn("");
+		renderFn(_content, _title);
 	}
 	
 	return true;
 };
 
-hkg.prototype.standardProcess = function (renderFn, cacheReader, cacheWriter, reqData, dataSourceFn){
+hkg.prototype.standardProcess = function (renderFn, cacheReader, cacheWriter, reqData, dataSourceFn, timeLimit){
 	var tht = this;
 	
 	var localCache = cacheReader();
@@ -408,9 +446,16 @@ hkg.prototype.standardProcess = function (renderFn, cacheReader, cacheWriter, re
 		
 		if ((data != null) && (!received)){
 			logger("Data is not null");
-			received = true;
-			cacheWriter(data);
-			renderFn(data);
+			var lastMod = new Date(data.lastModified);
+			var limitDate = new Date((new Date) - timeLimit);
+			var upperBound = new Date((+new Date) + 2000);
+			if (lastMod < limitDate){
+				//older, so we do nothing
+			}else if (lastMod <= upperBound){ //not in future
+				received = true;
+				cacheWriter(data);
+				renderFn(data);
+			}
 		}
 		
 		resFromPeers++;
@@ -445,6 +490,15 @@ hkg.prototype.standardProcess = function (renderFn, cacheReader, cacheWriter, re
 
 hkg.prototype.topics = function (stream, _POST, type, page){
 	var tht = this;
+
+	if (page == undefined){
+		page = 1;
+	}
+	
+	if (type == undefined){
+		type = "BW";
+	}
+	
 	var renderFn = function (data){
 		var channelsData = cacheI.readChannels(3600000);
 		var channels = null;
@@ -460,10 +514,6 @@ hkg.prototype.topics = function (stream, _POST, type, page){
 			channels: channels
 		}), "binary");
 	};
-
-	if (page == undefined){
-		page = 1;
-	}
 	
 	var timeLimit = 5000;
 	
@@ -493,7 +543,7 @@ hkg.prototype.topics = function (stream, _POST, type, page){
 		});
 	};
 	
-	this.standardProcess(renderFn, cacheReader, cacheWriter, reqData, dataSourceFn);
+	this.standardProcess(renderFn, cacheReader, cacheWriter, reqData, dataSourceFn, timeLimit);
 	
 	return true;
 };
@@ -540,7 +590,7 @@ hkg.prototype.post = function (stream, _POST, id, page){
 		});
 	};
 	
-	this.standardProcess(renderFn, cacheReader, cacheWriter, reqData, dataSourceFn);
+	this.standardProcess(renderFn, cacheReader, cacheWriter, reqData, dataSourceFn, timeLimit);
 	
 	return true;
 };

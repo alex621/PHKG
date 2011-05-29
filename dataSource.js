@@ -169,54 +169,65 @@ dataSource.prototype.login = function (email, password, callback){
 		"Referer": config.prefix + "login.aspx"
 	};
 	request("login.aspx", function (temp, resHeaders){
-		var inputPattern = /<input name="([^"]*)"/g;
-		var inputPattern2 = /<input.*name="([^"]*)".*value="([^"]*)"/g;
-		var formData = {};
-		var matches;
-		while (matches = inputPattern.exec(temp)){
-			formData[matches[1]] = "";
-		}
-		while (matches = inputPattern2.exec(temp)){
-			formData[matches[1]] = matches[2];
-		}
-		formData["ctl00$ContentPlaceHolder1$txt_email"] = email;
-		formData["ctl00$ContentPlaceHolder1$txt_pass"] = password;
-		formData["ctl00$ContentPlaceHolder1$cb_remember_login"] = "on";
-		
-		var sessionPattern = /(ASP\.NET_SessionId[^;]*);/g;
-		var cookies = resHeaders["set-cookie"];
-		for (var i = 0, l = cookies.length; i < l; i++){
-			var cookie = cookies[i];
-			
-			if (matches = sessionPattern.exec(cookie)){
-				session = matches[1];
+		try{
+			var inputPattern = /<input name="([^"]*)"/g;
+			var inputPattern2 = /<input.*name="([^"]*)".*value="([^"]*)"/g;
+			var formData = {};
+			var matches;
+			while (matches = inputPattern.exec(temp)){
+				formData[matches[1]] = "";
 			}
-		}
-		
-		var postData = qs.stringify(formData);
-		var headers2 = {
-			"Host": config.host,
-			"User-Agent": "Mozilla/5.0 (X11; U; Linux i686; zh-TW; rv:1.9) Gecko/2008061015 Firefox/3.0",
-			"Referer": config.prefix + "login.aspx",
-			"Content-Length": postData.length,
-			"Content-Type": "application/x-www-form-urlencoded",
-			"Cookie": session,
-			"Connection": "close"
-		};
-		
-		request("login.aspx", function (temp2, resHeaders){
-			var cookies2 = resHeaders["set-cookie"];
-			for (var i = 0, l = cookies2.length; i < l; i++){
-				var cookie = cookies2[i];
-				var cookiePattern = /^([^;]*);/;
-				var match = cookiePattern.exec(cookie);
-				session += ";" + match[1];
+			while (matches = inputPattern2.exec(temp)){
+				formData[matches[1]] = matches[2];
+			}
+			formData["ctl00$ContentPlaceHolder1$txt_email"] = email;
+			formData["ctl00$ContentPlaceHolder1$txt_pass"] = password;
+			formData["ctl00$ContentPlaceHolder1$cb_remember_login"] = "on";
+			
+			var sessionPattern = /(ASP\.NET_SessionId[^;]*);/g;
+			var cookies = resHeaders["set-cookie"];
+			for (var i = 0, l = cookies.length; i < l; i++){
+				var cookie = cookies[i];
+				
+				if (matches = sessionPattern.exec(cookie)){
+					session = matches[1];
+				}
 			}
 			
-			if (typeof callback == "function"){
-				callback(session);
-			}
-		}, "POST", headers2, postData);
+			var postData = qs.stringify(formData);
+			var headers2 = {
+				"Host": config.host,
+				"User-Agent": "Mozilla/5.0 (X11; U; Linux i686; zh-TW; rv:1.9) Gecko/2008061015 Firefox/3.0",
+				"Referer": config.prefix + "login.aspx",
+				"Content-Length": postData.length,
+				"Content-Type": "application/x-www-form-urlencoded",
+				"Cookie": session,
+				"Connection": "close"
+			};
+		
+			request("login.aspx", function (temp2, resHeaders){
+				fs.writeFile("debug", temp2, "binary");
+				var cookies2 = resHeaders["set-cookie"];
+				if (cookies2){
+					for (var i = 0, l = cookies2.length; i < l; i++){
+						var cookie = cookies2[i];
+						var cookiePattern = /^([^;]*);/;
+						var match = cookiePattern.exec(cookie);
+						session += ";" + match[1];
+					}
+				}else{
+					callback("LoginError");
+					return;
+				}
+				
+				if (typeof callback == "function"){
+					callback(session);
+				}
+			}, "POST", headers2, postData);
+		}catch (e){
+			callback("LoginError");
+			return;
+		}
 	}, "POST", headers1);
 };
 

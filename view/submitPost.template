@@ -7,7 +7,7 @@
 		<script type="text/javascript" src="<%= config.thisHTTPPath %>js/submitPost.js"></script>
 	</head>
 	<body id="submitPost">
-		<form method="POST" action="http://forum6.hkgolden.com/post.submit">
+		<form method="POST" action="post.submit">
 			<table cellspacing="0" cellpadding="0">
 				<thead>
 					<tr>
@@ -15,6 +15,11 @@
 					</tr>
 				</thead>
 				<tbody>
+					<% if (error){ %>
+					<tr>
+						<td colspan="2" style="color: red"><%=error%></td>
+					</tr>
+					<% } %>
 					
 					<% if ((! user) || (! user.isLoggedIn)){ %>
 					<tr>
@@ -52,7 +57,7 @@
 					<tr>
 						<td class="lblCol">¥D¦®:</td>
 						<td>
-							<input name="title" />
+							<input name="title" value="<%=title%>" />
 						</td>
 					</tr>
 					<% } %>
@@ -115,7 +120,7 @@
 						<td>
 							<div class="icons">
 								<% for (var code in iconMap){ %>
-								<img class="icon" code="<%=code%>" src="http://forum6.hkgolden.com/faces/<%=iconMap[code]%>" />
+								<img class="icon" code="<%=code%>" src="<%= config.thisHTTPPath %>faces/<%=iconMap[code]%>" />
 								<% } %>
 							</div>
 						</td>

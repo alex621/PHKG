@@ -9,11 +9,11 @@
 	<body id="topicsList">
 		<div class="categoryList">
 			前往
-			<a href="http://forum6.hkgolden.com/topics.aspx?type=BW">吹水台</a>
+			<a href="topics.aspx?type=BW">吹水台</a>
 			
 			<% if (channels != null && channels.length > 0){ %>
 			或其他
-			<select href="http://forum6.hkgolden.com/topics.aspx?type=">
+			<select href="topics.aspx?type=">
 				<option value="">請選擇</option>
 				<% for (var i = 0, l = channels.length; i < l; i++){ %>
 				<option value="<%= stripDangerousTags(channels[i].id) %>"><%= stripDangerousTags(channels[i].name) %></option>
@@ -23,7 +23,7 @@
 		</div>
 		
 		<div class="tools">
-			<a href="http://forum6.hkgolden.com/post.aspx?mt=N&ft=<%=type%>">發表</a>
+			<a href="post.aspx?mt=N&ft=<%=type%>">發表</a>
 		</div>
 	
 		<table cellspacing="0" cellpadding="0" id="topicsListTbl">
@@ -41,12 +41,12 @@
 				<% var topic = topics[i]; %>
 				<tr class="<%= (i % 2 ? "odd" : "even") %>">
 					<td class="titleCol">
-						<a href="http://forum6.hkgolden.com/view.aspx?message=<%=parseInt(topic.id)%>">
+						<a href="view.aspx?message=<%=parseInt(topic.id)%>">
 							<%= stripDangerousTags(topic.title) %>
 						</a>
 						<% var totalPages = Math.ceil(parseInt(topic.totalReplies) / 25); %>
 						<% if (totalPages > 1){ %>
-						<span class="last">[<a href="http://forum6.hkgolden.com/view.aspx?message=<%=parseInt(topic.id)%>&page=<%=totalPages%>"><%=totalPages%></a>]</span>
+						<span class="last">[<a href="view.aspx?message=<%=parseInt(topic.id)%>&page=<%=totalPages%>"><%=totalPages%></a>]</span>
 						<% } %>
 					</td>
 					<td class="authorCol"><%= stripDangerousTags(topic.authorName) %></td>
@@ -62,12 +62,12 @@
 			<div class="headBar"></div>
 			<div class="body">
 				<% if (parseInt(page) > 1){ %>
-				<a class="prev" href="http://forum6.hkgolden.com/topics.aspx?type=<%=type%>&page=<%=(parseInt(page) - 1)%>">上一頁</a>
+				<a class="prev" href="topics.aspx?type=<%=type%>&page=<%=(parseInt(page) - 1)%>">上一頁</a>
 				<% } %>
 				
 				<div class="fastPagin">
 					第
-					<select href="http://forum6.hkgolden.com/topics.aspx?type=<%=type%>&page=">
+					<select href="topics.aspx?type=<%=type%>&page=">
 						<% for (var i = 1; i < 150; i++){ %>
 						<option<%=(i == parseInt(page) ? ' selected="selected"' : "")%> value="<%=i%>"><%=i%></option>
 						<% } %>
@@ -76,7 +76,7 @@
 				</div>
 				
 				<% if (parseInt(page) < 150){ %>
-				<a class="next" href="http://forum6.hkgolden.com/topics.aspx?type=<%=type%>&page=<%=(parseInt(page) + 1)%>">下一頁</a>
+				<a class="next" href="topics.aspx?type=<%=type%>&page=<%=(parseInt(page) + 1)%>">下一頁</a>
 				<% } %>
 				
 				<div class="cb"></div>

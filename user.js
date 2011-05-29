@@ -35,6 +35,10 @@ var user = {
 	
 	login: function (email, password, callback){
 		dataSourceI.login(email, password, function (sessionData){
+			if (sessionData == "LoginError"){
+				callback("LoginError");
+				return;
+			}
 			var fullPath = config.userPath + "info.json";
 			var data = {
 				email: email,
@@ -45,6 +49,15 @@ var user = {
 			
 			callback(user.getInfo());
 		});
+	},
+	
+	logout: function (){
+		var fullPath = config.userPath + "info.json";
+		try{
+			fs.unlinkSync(fullPath);
+		}catch (e){
+			//no such file
+		}
 	}
 };
 
